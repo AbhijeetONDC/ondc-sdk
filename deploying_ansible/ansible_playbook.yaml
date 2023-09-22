@@ -1,0 +1,147 @@
+---
+- name: Update web servers
+  hosts: "{{ target }}"
+  remote_user: "{{ user }}"
+
+  vars_prompt:
+    - name: target
+      prompt: enter the hostname which you might have mentioned in host file
+      private: no
+
+    - name: domain
+      prompt: please enter the domain which will be serving the requests
+      private: no
+
+    - name: envtype
+      prompt: please enter the env file to copy, we are appending to .env, hence value can be -staging etc
+      private: no
+
+    - name: user
+      prompt: please enter the user of ec2 instance
+      private: no
+
+  tasks:
+    - name: Clone biap-client-node-js
+      git:
+        repo: "https://github.com/ondc-official/biap-client-node-js.git"
+        dest: "/home/{{ user }}/ONDC/project/biap-client-node-js"
+        version: "master"
+        force: yes
+
+    - name: Clone biap ui
+      git:
+        repo: "https://github.com/ondc-official/biap-app-ui-front.git"
+        dest: "/home/{{ user }}/ONDC/project/biap-app-ui-front"
+        version: "master"
+        force: yes
+
+    - name: Clone biap-bugzilla-service
+      git:
+        repo: "https://github.com/ONDC-Official/biap-bugzilla-service"
+        dest: "/home/{{ user }}/ONDC/project/biap-bugzilla-service"
+        version: "main"
+        force: yes
+
+    - name: Clone py ondc protocol
+      git:
+        repo: "https://github.com/ONDC-Official/py-protocol-layer.git"
+        dest: "/home/{{ user }}/ONDC/project/py-ondc-protocol"
+        version: "master"
+        force: yes
+
+    - name: Clone biap-igm-node-js
+      git:
+        repo: "https://github.com/ONDC-Official/biap-igm-node-js.git"
+        dest: "/home/{{ user }}/ONDC/project/biap-igm-node-js"
+        version: "main"
+        force: yes
+
+    - name: Copy config directory
+      copy:
+        src: "{{ playbook_dir }}/biap-client-node-js/config"
+        dest: "/home/{{ user }}/ONDC/project/biap-client-node-js/"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy config directory for igm
+      copy:
+        src: "{{ playbook_dir }}/biap-igm-node-js/config"
+        dest: "/home/{{ user }}/ONDC/project/biap-igm-node-js/"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy lets encrypt with domain replaced
+      copy:
+        src: "{{ playbook_dir }}/Configurations/init-letsencrypt.sh"
+        dest: "/home/{{ user }}/ONDC/project/init-letsencrypt.sh"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: replace __domain__ with domain name
+      replace:
+        path: "/home/{{ user }}/ONDC/project/init-letsencrypt.sh"
+        regexp: "__domain_name__"
+        replace: "{{ domain }}"
+
+    - name: copy Dockerfile without SSL as dockerfile in biap-app-ui-front
+      copy:
+        src: "{{ playbook_dir }}/biap-app-ui-front/DockerfileWithoutSSL"
+        dest: "/home/{{ user }}/ONDC/project/biap-app-ui-front/Dockerfile"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+        
+    - name: copy nginx-replace-with-domain.conf in biap-app-ui-front
+      copy:
+        src: "{{ playbook_dir }}/biap-app-ui-front/nginx-replace-with-domain.conf"
+        dest: "/home/{{ user }}/ONDC/project/biap-app-ui-front/nginx-replace-with-domain.conf"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+    - name: replace __domain__ with in nginx-replace-with-domain.conf
+      replace:
+        path: "/home/{{ user }}/ONDC/project/biap-app-ui-front/nginx-replace-with-domain.conf"
+        regexp: "__domain_name__"
+        replace: "{{ domain }}"
+
+    - name: replace __domain__ with in nginx-without-ssl.conf
+      replace:
+        path: "/home/{{ user }}/ONDC/project/biap-app-ui-front/nginx-without-ssl.conf"
+        regexp: "__domain_name__"
+        replace: "{{ domain }}"
+
+    - name: copy env file with domain replaced
+      copy:
+        src: "{{ playbook_dir }}/Configurations/.env{{ envtype }}"
+        dest: "/home/{{ user }}/ONDC/project/.env"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: replace __domain__ with domain name
+      replace:
+        path: "/home/{{ user }}/ONDC/project/.env"
+        regexp: "__domain_name__"
+        replace: "{{ domain }}"
+
+    - name: Copy docker-compose file into project
+      copy:
+        src: "{{ playbook_dir }}/Configurations/docker-compose.yml"
+        dest: "/home/{{ user }}/ONDC/project/docker-compose.yml"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+        
+    - name: Copy docker-compose-ssl file into project
+      copy:
+        src: "{{ playbook_dir }}/Configurations/docker-compose-ssl.yml"
+        dest: "/home/{{ user }}/ONDC/project/docker-compose-ssl.yml"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+        
+    - name: run letsencrypt
+      shell: "sudo mv ./ONDC/Configurations/grafana.ini /var && sudo mv ./ONDC/Configurations/local-config.yaml /var"
