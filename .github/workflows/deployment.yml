@@ -1,0 +1,101 @@
+name: Ansible Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  ssh-ec2:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2   
+
+      - name: SSH setup and creating folders
+        run: |
+          echo "${{ secrets.key }}" > ./deploying_ansible/configurations/key.pem
+          echo "${{ secrets.env }}" > ./deploying_ansible/configurations/.env
+          chmod 600 ./deploying_ansible/configurations/key.pem
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ vars.host }} >> ~/.ssh/known_hosts
+          ssh -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} -T <<EOF
+          if [ -d "ONDC" ]; then
+            echo "ONDC folder exist"
+            sudo rm -rf ./ONDC/configurations
+            cd ./ONDC/project && sudo rm -rf py-ondc-protocol biap-bugzilla-service biap-igm-node-js biap-app-ui-front biap-client-node-js && cd
+          else
+            echo "Creating ONDC folder"
+            mkdir ONDC
+            mkdir ONDC/project
+          fi
+          EOF
+      - name: scp to copy files on ec2
+        run: |
+            scp -i ./deploying_ansible/configurations/key.pem -r ./deploying_ansible ${{ vars.user }}@${{ vars.host }}:/home/"${{ vars.user }}"/ONDC
+  
+      - name: Validation Installation of Dependencies
+        run: |
+          ssh -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} -T <<EOF
+          if ! command -v ansible &> /dev/null; then
+             if  command -v yum &> /dev/null; then
+                  echo "yum is installed."
+                  sudo yum update
+                  sudo yum install python3 -y
+                  sudo yum install python3-pip -y
+                  pip install ansible
+                  sudo yum install git -y
+                  sudo yum install docker -y
+                  docker --version
+                  sudo systemctl start docker
+                  sudo systemctl enable docker
+                  sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                  sudo chmod +x /usr/local/bin/docker-compose
+                  docker-compose --version
+                  sudo usermod -aG docker ${{ vars.user }}
+             elif  command -v apt &> /dev/null; then
+                  echo "apt is installed."
+                  sudo apt-add-repository ppa:ansible/ansible -y
+                  sudo apt-get update
+                  sudo apt-get install ansible -y
+                  ansible --version
+                  sudo apt-get install git -y
+                  git --version
+                  sudo apt install docker.io
+                  sudo systemctl start docker
+                  sudo systemctl enable docker
+                  sudo usermod -aG docker ${{ vars.user }}
+                  sudo apt install docker-compose -y
+                  docker -v
+                  docker-compose -v
+             else
+                  echo "Unable to detect apt or yum package managers"
+             fi 
+          fi
+          EOF
+      - name: Deployment through Ansible
+        run: |
+          ssh -o ServerAliveInterval=30 -o TCPKeepAlive=yes -T -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
+          ssh-keyscan ${{ vars.host }} >> ~/.ssh/known_hosts
+          cd ONDC
+          ansible-playbook -i ansible_hosts ansible_playbook.yaml -e target=testing_on_ec2 -e domain=${{ vars.domain }} -e envtype="" -e user=${{ vars.user }} 
+            if [[ ! -d /home/"${{ vars.user }}"/.conf/live/"${{ vars.domain }}" && ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
+                 echo "Certificate not Exist"
+                 sudo docker-compose -f ./project/docker-compose.yml up --build -d
+                 cd /home/"${{ vars.user }}"/ONDC/project && sudo chmod +x init-letsencrypt.sh && sudo ./init-letsencrypt.sh
+                 sudo cp -r /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf /home/"${{ vars.user }}"/.conf
+                 if [[ ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
+                   echo "Certificate not exist, please recreate the it or change the domain"
+                   exit 1
+                 fi
+                 sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
+                 sudo cp /home/"${{ vars.user }}"/ONDC/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
+                 sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d nginx
+            else 
+                 echo "Certificate Exist"
+                 sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
+                 sudo cp /home/"${{ vars.user }}"/ONDC/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
+                 sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d
+            fi
+          EOF
