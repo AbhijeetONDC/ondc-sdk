@@ -23,7 +23,7 @@ jobs:
           ssh -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} -T <<EOF
           if [ -d "ONDC" ]; then
             echo "ONDC folder exist"
-            sudo rm -rf ./ONDC/configurations
+            sudo rm -rf ./ONDC/deploying_ansible
             cd ./ONDC/project && sudo rm -rf py-ondc-protocol biap-bugzilla-service biap-igm-node-js biap-app-ui-front biap-client-node-js && cd
           else
             echo "Creating ONDC folder"
@@ -78,24 +78,24 @@ jobs:
         run: |
           ssh -o ServerAliveInterval=30 -o TCPKeepAlive=yes -T -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
           ssh-keyscan ${{ vars.host }} >> ~/.ssh/known_hosts
-          cd ONDC
+          cd ./ONDC/deploying_ansible
           ansible-playbook -i ansible_hosts ansible_playbook.yaml -e target=testing_on_ec2 -e domain=${{ vars.domain }} -e envtype="" -e user=${{ vars.user }} 
             if [[ ! -d /home/"${{ vars.user }}"/.conf/live/"${{ vars.domain }}" && ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
                  echo "Certificate not Exist"
-                 sudo docker-compose -f ./project/docker-compose.yml up --build -d
+                 sudo docker-compose -f ./../project/docker-compose.yml up --build -d
                  cd /home/"${{ vars.user }}"/ONDC/project && sudo chmod +x init-letsencrypt.sh && sudo ./init-letsencrypt.sh
                  sudo cp -r /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf /home/"${{ vars.user }}"/.conf
                  if [[ ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
-                   echo "Certificate not exist, please recreate the it or change the domain"
+                   echo "Certificate not exist, please recreate it or change the domain"
                    exit 1
                  fi
                  sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
-                 sudo cp /home/"${{ vars.user }}"/ONDC/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
+                 sudo cp /home/"${{ vars.user }}"/ONDC/deploying_ansible/configurations/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
                  sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d nginx
             else 
                  echo "Certificate Exist"
                  sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
-                 sudo cp /home/"${{ vars.user }}"/ONDC/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
+                 sudo cp /home/"${{ vars.user }}"/ONDC/deploying_ansible/configurations/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
                  sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d
             fi
           EOF
