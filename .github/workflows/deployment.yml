@@ -89,13 +89,9 @@ jobs:
                    echo "Certificate not exist, please recreate it or change the domain"
                    exit 1
                  fi
-                 sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
-                 sudo cp /home/"${{ vars.user }}"/ONDC/deploying_ansible/configurations/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
                  sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d nginx
             else 
                  echo "Certificate Exist"
-                 sudo rm -rf /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front/Dockerfile
-                 sudo cp /home/"${{ vars.user }}"/ONDC/deploying_ansible/configurations/biap-app-ui-front/Dockerfile /home/"${{ vars.user }}"/ONDC/project/biap-app-ui-front
                  sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d
             fi
           EOF
