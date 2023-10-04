@@ -85,14 +85,6 @@
         path: "/home/{{ user }}/ONDC/project/init-letsencrypt.sh"
         regexp: "__domain_name__"
         replace: "{{ domain }}"
-
-    - name: copy Dockerfile without SSL as dockerfile in biap-app-ui-front
-      copy:
-        src: "{{ playbook_dir }}/configurations/biap-app-ui-front/DockerfileWithoutSSL"
-        dest: "/home/{{ user }}/ONDC/project/biap-app-ui-front/Dockerfile"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0755"
         
     - name: replace __domain__ with in nginx-replace-with-domain.conf
       replace:
@@ -119,6 +111,12 @@
         path: "/home/{{ user }}/ONDC/project/.env"
         regexp: "__domain_name__"
         replace: "{{ domain }}"
+
+    - name: replace nginx.conf with nginx-replace-with-domain.conf
+      replace:
+        path: "/home/{{ user }}/ONDC/project/biap-app-ui-front/Dockerfile"
+        regexp: "nginx.conf"
+        replace: "nginx-replace-with-domain.conf"
 
     - name: Copy docker-compose file into project
       copy:
