@@ -72,7 +72,7 @@
         group: "{{ user }}"
         mode: "0755"
 
-    - name: Copy lets encrypt with domain replaced
+    - name: Copy lets encrypt
       copy:
         src: "{{ playbook_dir }}/configurations/init-letsencrypt.sh"
         dest: "/home/{{ user }}/ONDC/project/init-letsencrypt.sh"
@@ -94,13 +94,6 @@
         group: "{{ user }}"
         mode: "0755"
         
-    - name: copy nginx-replace-with-domain.conf in biap-app-ui-front
-      copy:
-        src: "{{ playbook_dir }}/configurations/biap-app-ui-front/nginx-replace-with-domain.conf"
-        dest: "/home/{{ user }}/ONDC/project/biap-app-ui-front/nginx-replace-with-domain.conf"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0755"
     - name: replace __domain__ with in nginx-replace-with-domain.conf
       replace:
         path: "/home/{{ user }}/ONDC/project/biap-app-ui-front/nginx-replace-with-domain.conf"
