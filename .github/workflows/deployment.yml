@@ -24,7 +24,7 @@ jobs:
           if [ -d "ONDC" ]; then
             echo "ONDC folder exist"
             sudo rm -rf ./ONDC/deploying_ansible
-            cd ./ONDC/project && sudo rm -rf py-ondc-protocol biap-bugzilla-service biap-igm-node-js biap-app-ui-front biap-client-node-js && cd
+            cd ./ONDC/project && sudo rm -rf py-ondc-protocol biap-bugzilla-service biap-igm-node-js biap-app-ui-front biap-client-node-js
           else
             echo "Creating ONDC folder"
             mkdir ONDC
