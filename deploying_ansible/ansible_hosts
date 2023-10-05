@@ -2,7 +2,7 @@
 43.205.229.21
 
 [testing_on_ec2]
-3.109.99.5 ansible_user="{{ user }}" ansible_ssh_private_key_file=/home/"{{ user }}"/ONDC/configurations/key.pem
+3.109.99.5 ansible_user="{{ user }}" ansible_ssh_private_key_file=/home/"{{ user }}"/ONDC/deploying_ansible/configurations/key.pem
 
 [stage]
 13.234.78.70
