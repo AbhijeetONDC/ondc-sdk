@@ -20,6 +20,10 @@
       prompt: please enter the user of ec2 instance
       private: no
 
+    - name: key_path
+      prompt: please enter the ec2 private key path
+      private: no
+
   tasks:
     - name: Clone biap-client-node-js
       git:
