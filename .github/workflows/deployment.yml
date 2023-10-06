@@ -88,8 +88,9 @@ jobs:
                  if [[ ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
                    echo "Certificate not exist, please recreate it or change the domain"
                    exit 1
-                 fi
-                 sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d nginx
+                 else
+                   sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d nginx
+                 fi                 
             else 
                  echo "Certificate Exist"
                  sudo docker-compose -f /home/"${{ vars.user }}"/ONDC/project/docker-compose-ssl.yml up --build -d
