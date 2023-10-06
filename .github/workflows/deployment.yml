@@ -26,7 +26,7 @@ jobs:
             sudo rm -rf ./ONDC/deploying_ansible
             cd ./ONDC/project && sudo rm -rf py-ondc-protocol biap-bugzilla-service biap-igm-node-js biap-app-ui-front biap-client-node-js
           else
-            echo "Creating an ONDC folder"
+            echo "Creating ONDC folder"
             mkdir ONDC
             mkdir ONDC/project
           fi
