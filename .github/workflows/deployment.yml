@@ -53,7 +53,7 @@ jobs:
                   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                   sudo chmod +x /usr/local/bin/docker-compose
                   docker-compose --version
-                  sudo usermod -aG docker ${{ vars.user }}
+                  sudo usermod -aG docker "$USER"
              elif  command -v apt &> /dev/null; then
                   echo "apt is installed."
                   sudo apt-add-repository ppa:ansible/ansible -y
@@ -65,7 +65,7 @@ jobs:
                   sudo apt install docker.io
                   sudo systemctl start docker
                   sudo systemctl enable docker
-                  sudo usermod -aG docker ${{ vars.user }}
+                  sudo usermod -aG docker "$USER"
                   sudo apt install docker-compose -y
                   docker -v
                   docker-compose -v
@@ -76,10 +76,10 @@ jobs:
           EOF
       - name: Deployment through Ansible
         run: |
-          ssh -o ServerAliveInterval=30 -o TCPKeepAlive=yes -T -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
+          ssh -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
           ssh-keyscan ${{ vars.host }} >> ~/.ssh/known_hosts
           cd ./ONDC/deploying_ansible
-          ansible-playbook -i ansible_hosts ansible_playbook.yaml -e target=testing_on_ec2 -e domain=${{ vars.domain }} -e envtype="" -e user=${{ vars.user }} 
+          ansible-playbook -i ansible_hosts ansible_playbook.yaml -e target=testing_on_ec2 -e domain=${{ vars.domain }} -e envtype="" -e user=${{ vars.user }} -e key_path=/home/"{{ user }}"/ONDC/deploying_ansible/configurations/key.pem
             if [[ ! -d /home/"${{ vars.user }}"/.conf/live/"${{ vars.domain }}" && ! -d /home/"${{ vars.user }}"/ONDC/project/data/certbot/conf/live/"${{ vars.domain }}" ]];then
                  echo "Certificate not Exist"
                  sudo docker-compose -f ./../project/docker-compose.yml up --build -d
