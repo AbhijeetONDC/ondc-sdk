@@ -76,7 +76,7 @@ jobs:
           EOF
       - name: Deployment through Ansible
         run: |
-          ssh -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
+          ssh -o ServerAliveInterval=30 -o TCPKeepAlive=yes -T -i ./deploying_ansible/configurations/key.pem ${{ vars.user }}@${{ vars.host }} <<EOF
           ssh-keyscan ${{ vars.host }} >> ~/.ssh/known_hosts
           cd ./ONDC/deploying_ansible
           ansible-playbook -i ansible_hosts ansible_playbook.yaml -e target=testing_on_ec2 -e domain=${{ vars.domain }} -e envtype="" -e user=${{ vars.user }} -e key_path=/home/"{{ user }}"/ONDC/deploying_ansible/configurations/key.pem
